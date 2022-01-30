@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
 
@@ -9,3 +11,19 @@ urlpatterns = [
     path('auth/', include('django.contrib.auth.urls')),
     path('about/', include('about.urls', namespace='about')),
 ]
+
+# Перехват и переопределение view-функций для ошибок
+handler404 = 'core.views.page_not_found'
+handler403 = 'core.views.permission_denied'
+handler500 = 'core.views.server_error'
+
+# Эта колдограмма будет работать, когда ваш сайт в режиме отладки.
+# Он позволяет обращаться к файлам в директории, указанной в MEDIA_ROOT
+# по имени, через префикс MEDIA_URL.
+if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns += static(
+        settings.MEDIA_URL, document_root=settings.MEDIA_ROOT
+    )
+    urlpatterns += (path('__debug__/', include(debug_toolbar.urls)),)

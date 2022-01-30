@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load thumbnail %}
 {% block title %}
 Пост {{ post.text|truncatechars:30 }}
 {% endblock title %}
@@ -13,7 +14,7 @@
         <li class="list-group-item">
           Группа: {{ posts.group }}
           <a href="{% url 'posts:group_list' post.group.slug %}">
-          все записи группы "{{ post.group.title }}"
+            все записи группы "{{ post.group.title }}"
           </a>
         </li>
         {% endif %}
@@ -32,6 +33,9 @@
       </ul>
     </aside>
     <article class="col-12 col-md-9">
+      {% thumbnail post.image "960x339" crop="center" upscale=True as im %}
+        <img class="card-img my-2" src="{{ im.url }}">
+      {% endthumbnail %}
       <p>{{ post.text }}</p>
       {% if post.author == request.user %}
       <a class="btn btn-primary" 
@@ -39,6 +43,7 @@
           редактировать запись
       </a> 
       {% endif %}
+      {% include 'posts/includes/comments.html' %}
     </article>
   </div> 
 {% endblock content %}

@@ -1,12 +1,11 @@
 {% extends 'base.html' %}
 {% block title %}
-  Записи сообщества {{ group.title }}
-{% endblock title %}
+  Последние посты ваших авторов
+{% endblock %}
 {% block content %}
-  <!-- класс py-5 создает отступы сверху и снизу блока -->
-  <div class="container py-5">
-    <h1>{{ group.title }}</h1>
-    <p>{{ group.description }}</p>
+   <div class="container py-5">
+    {% include 'posts/includes/switcher.html' %}
+    <h2>Последние посты ваших авторов</h2>
     {% for post in page_obj %}
     {% include 'posts/includes/post_list.html' %}
       {% if post.group %}
@@ -15,8 +14,7 @@
         >все записи группы "{{ post.group.title }}"</a>
       {% endif %}
       {% if not forloop.last %}<hr>{% endif %}
-    {% endfor %} 
-    <!-- под последним постом нет линии -->
+    {% endfor %}
     {% include 'posts/includes/paginator.html' %}
-  </div>  
+  </div>
 {% endblock content %}

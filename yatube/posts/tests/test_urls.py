@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 
@@ -38,25 +40,40 @@ class PostsUrlTests(TestCase):
         """Проверяем список страниц доступных для неавторизованных клиентов"""
         public_url = [
             '/',
-            '/group/test-slug/',
-            '/profile/FirstUser/',
-            f'/posts/{PostsUrlTests.post.id}/'
+            f'/group/{PostsUrlTests.group.slug}/',
+            f'/profile/{PostsUrlTests.user.username}/',
+            f'/posts/{PostsUrlTests.post.id}/',
         ]
         for url in public_url:
             with self.subTest(url=url):
                 response = self.guest_client.get(url)
-                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
 
     def test_posts_url_authorized_client(self):
         """Проверка доступности страниц для авторизованных пользователей"""
         non_public_url = [
             '/create/',
-            f'/posts/{PostsUrlTests.post.id}/edit/'  # доступно только автору
+            f'/posts/{PostsUrlTests.post.id}/edit/',  # доступно только автору
+            '/follow/',
         ]
         for url in non_public_url:
             with self.subTest(url=url):
                 response = self.authorized_client.get(url)
-                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
+
+    def test_posts_url_authorized_client(self):
+        """Проверка доступности страниц системы подписки и переадресацию"""
+        non_public_url = [
+            f'/profile/{PostsUrlTests.second_user.username}/follow/',
+            f'/profile/{PostsUrlTests.second_user.username}/unfollow/',
+        ]
+        for url in non_public_url:
+            with self.subTest(url=url):
+                response = self.authorized_client.get(url, follow=True)
+                self.assertRedirects(
+                    response,
+                    f'/profile/{PostsUrlTests.second_user.username}/'
+                )
 
     def test_posts_url_redirect_unauthorized_client(self):
         """Проверяем перенаправление анонимного
@@ -64,7 +81,11 @@ class PostsUrlTests(TestCase):
         """
         non_public_url = [
             '/create/',
-            f'/posts/{PostsUrlTests.post.id}/edit/'  # доступно только автору
+            f'/posts/{PostsUrlTests.post.id}/edit/',  # доступно только автору
+            f'/posts/{PostsUrlTests.post.id}/comment/',
+            f'/profile/{PostsUrlTests.user.username}/follow/',
+            f'/profile/{PostsUrlTests.user.username}/unfollow/',
+            '/follow/',
         ]
         for url in non_public_url:
             with self.subTest(url=url):
@@ -82,17 +103,18 @@ class PostsUrlTests(TestCase):
     def test_posts_url_unexisting_page(self):
         """Проверяем статус при обращении к несуществующей страницы"""
         response = self.guest_client.get('/unexisting_page/')
-        self.assertEqual(response.status_code, 404)
+        self.assertEqual(response.status_code, HTTPStatus.NOT_FOUND)
 
     def test_posts_template(self):
         """Проверка соответствия URL-адреса и шаблона"""
         url_template = {
             '/': 'posts/index.html',
-            '/group/test-slug/': 'posts/group_list.html',
-            '/profile/FirstUser/': 'posts/profile.html',
+            f'/group/{PostsUrlTests.group.slug}/': 'posts/group_list.html',
+            f'/profile/{PostsUrlTests.user.username}/': 'posts/profile.html',
             f'/posts/{PostsUrlTests.post.id}/': 'posts/post_detail.html',
             '/create/': 'posts/create_post.html',
-            f'/posts/{PostsUrlTests.post.id}/edit/': 'posts/create_post.html'
+            f'/posts/{PostsUrlTests.post.id}/edit/': 'posts/create_post.html',
+            '/follow/': 'posts/follow.html',
         }
         for url, template in url_template.items():
             with self.subTest(url=url):
