@@ -12,13 +12,9 @@ from ..models import Comment, Follow, Group, Post
 
 User = get_user_model()
 
-# Создаем временную папку для медиа-файлов;
-# на момент теста медиа папка будет переопределена
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
 
-# Для сохранения media-файлов в тестах будет использоваться
-# временная папка TEMP_MEDIA_ROOT, а потом мы ее удалим
 @override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostPagesTests(TestCase):
     @classmethod
@@ -53,7 +49,6 @@ class PostPagesTests(TestCase):
         cls.user_group_1 = range(1, 12)
         cls.user_2_not_group = 12
         cls.user_group_2 = range(13, 15)
-        # Создаём 11 постов с первыми группой и пользователем
         for i in cls.user_group_1:
             cls.obj.append(Post(
                 id=i,
@@ -62,13 +57,11 @@ class PostPagesTests(TestCase):
                 group=cls.group,
                 image=cls.uploaded,
             ))
-        # Создадим ещё один пост без группы
         cls.obj.append(Post(
             id=cls.user_2_not_group,
             author=cls.user_2,
             text=f'Тестовая запись {cls.user_2_not_group}'
         ))
-        # Создаём ещё 2 поста со вторыми группой и пользователем
         for i in cls.user_group_2:
             cls.obj.append(Post(
                 id=i,
@@ -118,8 +111,6 @@ class PostPagesTests(TestCase):
             reverse('posts:create_post'): 'posts/create_post.html',
             reverse('posts:follow_index'): 'posts/follow.html',
         }
-        # Проверяем, что при обращении к name вызывается соответствующий
-        # HTML-шаблон
         for reverse_name, template in templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
                 response = self.authorized_client.get(reverse_name)
@@ -130,17 +121,13 @@ class PostPagesTests(TestCase):
         контекстом
         """
         response = self.guest_client.get(reverse('posts:index'))
-        # Взяли первый элемент из отфильтрованного списка объектов
         first_object = response.context['page_obj'][0]
         post_author = first_object.author.username
         post_text = first_object.text
         post_group = first_object.group.title
         post_pub_date = first_object.pub_date
         post_image = first_object.image
-        # Посчитаем общее кол-во постов исходя из текущей итерации
         count_obj = response.context['paginator'].count
-        # Проверяем, что содержание первого объекта совпадает с
-        # последним созданным постом
         self.assertEqual(post_author, PostPagesTests.user_2.username)
         self.assertEqual(
             post_text,
@@ -152,7 +139,6 @@ class PostPagesTests(TestCase):
             PostPagesTests.obj[len(PostPagesTests.obj) - 1].pub_date
         )
         self.assertIn(list(post_image)[0], PostPagesTests.small_gif)
-        # Проверяем общее кол-во постов по фильтрации
         self.assertEqual(count_obj, len(PostPagesTests.obj))
 
     def test_posts_group_list_and_profile_show_correct_context(self):
@@ -172,17 +158,13 @@ class PostPagesTests(TestCase):
         for name in reverse_name:
             with self.subTest(name=name):
                 response = self.guest_client.get(name)
-                # Взяли первый элемент из отфильтрованного списка объектов
                 first_object = response.context['page_obj'][0]
                 post_author = first_object.author.username
                 post_text = first_object.text
                 post_group = first_object.group.title
                 post_pub_date = first_object.pub_date
                 post_image = first_object.image
-                # Посчитаем общее кол-во постов исходя из текущей итерации
                 count_obj = response.context['paginator'].count
-                # Проверяем, что содержание первого объекта совпадает с
-                # последним созданным постом
                 self.assertEqual(post_author, PostPagesTests.user.username)
                 self.assertEqual(
                     post_text,
@@ -198,9 +180,7 @@ class PostPagesTests(TestCase):
                     ].pub_date
                 )
                 self.assertIn(list(post_image)[0], PostPagesTests.small_gif)
-                # Проверяем общее кол-во постов по фильтрации
                 self.assertEqual(count_obj, len(PostPagesTests.user_group_1))
-                # Проверяем дополнительные значения в словарях контекста
                 if 'group' in response.context.keys():
                     self.assertEqual(
                         response.context['group'],
@@ -264,7 +244,6 @@ class PostPagesTests(TestCase):
         контекстом
         """
         num_post = len(PostPagesTests.obj)
-        # Создадим к последнему посту комментарий
         comment = Comment.objects.create(
             post=PostPagesTests.obj[num_post - 1],
             text='Текст комментария',
@@ -335,7 +314,6 @@ class PostPagesTests(TestCase):
         for reverse_name in reverse_name_list:
             with self.subTest(reverse_name=reverse_name):
                 response = self.guest_client.get(reverse_name)
-                # 11-й созданный пост будет присутствовать на всех первых стр.
                 self.assertIn(
                     PostPagesTests.obj[len(PostPagesTests.user_group_1) - 1],
                     response.context['page_obj']
@@ -368,7 +346,6 @@ class PostPagesTests(TestCase):
             PostPagesTests.obj[PostPagesTests.user_2_not_group - 1],
             response.context['page_obj']
         )
-        # А теперь проверим, что не отображается на страницах групп и FirstUser
         reverse_name_list = [
             reverse(
                 'posts:group_list',
@@ -408,20 +385,16 @@ class PostPagesTests(TestCase):
 
     def test_posts_user_can_follow(self):
         """Авторизованный пользователь может подписаться на другого автора"""
-        # Посчитаем кол-во подписок изначально
         follow_count = PostPagesTests.user.follower.count()
         self.authorized_client.get(reverse(
             'posts:profile_follow',
             kwargs={'username': PostPagesTests.user_2.username}
         ))
-        # Проверим, что кол-во подписок увеличилось на 1
         self.assertEqual(
             PostPagesTests.user.follower.count(),
             follow_count + 1,
         )
-        # достанем из базы подписку
         follow = PostPagesTests.user.follower.last()
-        # Проверим поля
         self.assertEqual(follow.user, PostPagesTests.user)
         self.assertEqual(follow.author, PostPagesTests.user_2)
 
@@ -464,36 +437,29 @@ class PostPagesTests(TestCase):
     def test_posts_follow_index_context(self):
         """Проверяем,что шаблон follow_index сформирован с правильным
         контекстом при наличии подписки"""
-        # Создадим подписку
         Follow.objects.create(
             user=PostPagesTests.user_2,
             author=PostPagesTests.user,
         )
-        # Создадим новый пост
         new_post = Post.objects.create(
             author=PostPagesTests.user,
             text='Тестовая запись',
         )
         response = self.authorized_client_2.get(reverse('posts:follow_index'))
-        # Новый пост появился у подписанного на автора пользователя
         self.assertIn(new_post, response.context['page_obj'])
         response = self.authorized_client.get(reverse('posts:follow_index'))
-        # Но не появился у не подписанного на автора пользователя
         self.assertNotIn(new_post, response.context['page_obj'])
 
     def test_posts_unfollow_index_context(self):
         """Проверяем,что шаблон follow_index сформирован с правильным
         контекстом при отсутствии подписки"""
-        # Создадим новый пост
         new_post = Post.objects.create(
             author=PostPagesTests.user_2,
             text='Тестовая запись',
         )
-        # Проверим, что подписка отсуствует
         self.assertFalse(Follow.objects.filter(
             user=PostPagesTests.user,
             author=PostPagesTests.user_2
         ).exists())
         response = self.authorized_client.get(reverse('posts:follow_index'))
-        # Пост не появился у не подписанного на автора пользователя
         self.assertNotIn(new_post, response.context['page_obj'])

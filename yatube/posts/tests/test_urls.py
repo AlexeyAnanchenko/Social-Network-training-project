@@ -25,15 +25,10 @@ class PostsUrlTests(TestCase):
         )
 
     def setUp(self):
-        # Создаем неавторизованный клиент
         self.guest_client = Client()
-        # Создаем первый клиент для авторизации
         self.authorized_client = Client()
-        # Создаем второй клиент для авторизации
         self.second_authorized_client = Client()
-        # Авторизуем первого пользователя
         self.authorized_client.force_login(PostsUrlTests.user)
-        # Авторизуем второго пользователя
         self.second_authorized_client.force_login(PostsUrlTests.second_user)
 
     def test_posts_url_unauthorized_client(self):
@@ -53,7 +48,7 @@ class PostsUrlTests(TestCase):
         """Проверка доступности страниц для авторизованных пользователей"""
         non_public_url = [
             '/create/',
-            f'/posts/{PostsUrlTests.post.id}/edit/',  # доступно только автору
+            f'/posts/{PostsUrlTests.post.id}/edit/',
             '/follow/',
         ]
         for url in non_public_url:
@@ -81,7 +76,7 @@ class PostsUrlTests(TestCase):
         """
         non_public_url = [
             '/create/',
-            f'/posts/{PostsUrlTests.post.id}/edit/',  # доступно только автору
+            f'/posts/{PostsUrlTests.post.id}/edit/',
             f'/posts/{PostsUrlTests.post.id}/comment/',
             f'/profile/{PostsUrlTests.user.username}/follow/',
             f'/profile/{PostsUrlTests.user.username}/unfollow/',

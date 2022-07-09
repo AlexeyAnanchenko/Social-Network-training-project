@@ -22,19 +22,11 @@ class PostsCacheTests(TestCase):
     def test_cache_index(self):
         """Проверяем корректность работы кэша в шаблоне index.html"""
         response = self.guest_client.get(reverse('posts:index'))
-        # проверим, что получили ответ
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        # проверим наличие созданного поста в контенте ответа
         self.assertIn(self.post.text, response.content.decode())
-        # удалим пост
         self.post.delete()
-        # сделаем повторный get запрос
         response = self.guest_client.get(reverse('posts:index'))
-        # проверяем, что в кешэ пост сохранился
         self.assertIn(self.post.text, response.content.decode())
-        # Очищаем кеш
         cache.clear()
-        # делаем ещё один запрос
         response = self.guest_client.get(reverse('posts:index'))
-        # Провеяем, что поста уже нет в HttpResponse
         self.assertNotIn(self.post.text, response.content.decode())
