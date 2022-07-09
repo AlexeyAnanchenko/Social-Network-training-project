@@ -45,7 +45,7 @@ python3 yatube/manage.py runserver
 ```
 
 
-Стек:
+### Стек:
 
 - Python 3.7
 - Django 2.2
